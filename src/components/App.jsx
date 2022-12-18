@@ -13,31 +13,31 @@ const App = () => {
   const [galleryItems, setGalleryItems] = useState([]);
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(null);
+  const [totalItems, setTotalItems] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const pageSize = 12;
-
   useEffect(() => {
-    if (page === totalPages || totalPages === 1) {
+    if (galleryItems.length === totalItems) {
       toast.info('Это все изображения по вашему запросу');
     }
-  }, [page, totalPages]);
+  }, [galleryItems.length, totalItems]);
 
   useEffect(() => {
     if (query === '') {
       return;
     }
     setIsLoading(true);
-    Api.getImages(query, pageSize, page)
+    Api.getImages(query, page)
       .then(items => {
         if (items.data.hits.length === 0) {
-          toast.error('Изображения по вашему запросу не найдены');
+          toast.info('Изображения по вашему запросу не найдены');
           return;
         }
+        if (page === 1) {
+          setTotalItems(items.data.totalHits);
+        }
         setGalleryItems(prev => [...prev, ...items.data.hits]);
-        setTotalPages(Math.ceil(items.data.totalHits / pageSize));
       })
       .catch(error => console.warn(error))
       .finally(() => setIsLoading(false));
@@ -49,7 +49,7 @@ const App = () => {
     }
     setGalleryItems([]);
     setPage(1);
-    setTotalPages(null);
+    setTotalItems(null);
     setQuery(value.trim());
   };
 
@@ -72,7 +72,7 @@ const App = () => {
         <ImageGallery onSelectImage={onSelectImage} images={galleryItems} />
       )}
       {isLoading && <Loader />}
-      {galleryItems.length > 0 && page < totalPages && (
+      {galleryItems.length > 0 && galleryItems.length !== totalItems && (
         <Box textAlign="center">
           <Button onClick={onLoadButtonClick}>Load more</Button>
         </Box>
